@@ -29,9 +29,14 @@ var (
 	guess         = make([]int, NUM_COLS)
 	solution      = make([]int, NUM_COLS)
 
-	candidates [][]int
-	feedbacks  []feedback
+	allCandidates []candidate
+	feedbacks     []feedback
 )
+
+type candidate struct {
+	code []int
+	score int
+}
 
 type feedback struct {
 	guess []int
@@ -75,9 +80,9 @@ func placeColor(row, col int) {
 
 func solve() {
 	go func() {
-		candidates = allCandidates(NUM_COLS)
+		allCandidates = genAllCandidates(NUM_COLS)
 		for activeRow != -1 {
-			for i, g := range genGuess() {
+			for i, g := range knuthGuess() {
 				selectedColor = g
 				placeColor(activeRow, i)
 			}
