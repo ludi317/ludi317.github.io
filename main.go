@@ -15,13 +15,10 @@ import (
 const (
 	NUM_ROWS   = 10
 	NUM_COLS   = 4
-	NUM_COLORS = 8
+	NUM_COLORS = 6
 
 	gameTableID   = "gameTableID"
-	dataRowAttr   = "data-row"
-	dataColAttr   = "data-col"
 	solutionClass = "solutionClass"
-	checkBoxID    = "checkboxID"
 	imageDir      = "images/"
 )
 
@@ -29,13 +26,24 @@ var (
 	document      dom.HTMLDocument
 	selectedColor int
 	activeRow     int
-	guess         [NUM_COLS]int
-	solution      [NUM_COLS]int
+	guess         = make([]int, NUM_COLS)
+	solution      = make([]int, NUM_COLS)
+
+	candidates [][]int
+	feedbacks  []feedback
 )
+
+type feedback struct {
+	guess []int
+	bulls int
+	cows  int
+}
 
 func main() {
 	js.Global.Set("pickColor", jsutil.Wrap(pickColor))
 	js.Global.Set("placeColor", jsutil.Wrap(placeColor))
+	js.Global.Set("solve", jsutil.Wrap(solve))
+	js.Global.Set("reload", jsutil.Wrap(reload))
 	document = dom.GetWindow().Document().(dom.HTMLDocument)
 	document.AddEventListener("DOMContentLoaded", false, func(dom.Event) {
 		go run()
@@ -44,11 +52,9 @@ func main() {
 
 func run() {
 	rand1 := rand.New(rand.NewSource(time.Now().UnixNano()))
-	perms := rand1.Perm(NUM_COLORS)
 	for i := range solution {
-		solution[i] = perms[i] + 1
+		solution[i] = rand1.Intn(NUM_COLORS) + 1
 	}
-	println(solution)
 	document.Body().SetInnerHTML(htmlg.Render(render()))
 }
 
@@ -58,58 +64,55 @@ func pickColor(s int) {
 		strconv.Itoa(selectedColor)+`.gif"), auto; border: 3px black solid;`)
 }
 
-func placeColor(this dom.HTMLElement) {
-	row := this.GetAttribute(dataRowAttr)
-	if selectedColor != -1 && row == strconv.Itoa(activeRow) {
-		this.SetAttribute(atom.Src.String(), imageDir+"color_"+strconv.Itoa(selectedColor)+".gif")
-		iCol, _ := strconv.Atoi(this.GetAttribute(dataColAttr))
-		guess[iCol] = selectedColor
-		score()
+func placeColor(row, col int) {
+	if selectedColor != -1 && row == activeRow {
+		document.GetElementByID(strconv.Itoa(row)+"-"+strconv.Itoa(col)).SetAttribute(atom.Src.String(),
+			imageDir+"color_"+strconv.Itoa(selectedColor)+".gif")
+		guess[col] = selectedColor
+		grade()
 	}
 }
 
-func score() {
+func solve() {
+	go func() {
+		candidates = allCandidates(NUM_COLS)
+		for activeRow != -1 {
+			for i, g := range genGuess() {
+				selectedColor = g
+				placeColor(activeRow, i)
+			}
+			time.Sleep(time.Millisecond * 100)
+		}
+	}()
+}
+
+func reload() {
+	document.Location().Call("reload")
+}
+
+func grade() {
 	for _, g := range guess {
 		if g == 0 {
 			return
 		}
 	}
-	bulls, cows := 0, 0
-	colors := [NUM_COLORS + 1]int{}
-	for i, g := range guess {
-		if solution[i] == g {
-			bulls++
-		} else {
-			if colors[g] < 0 {
-				cows++
-			}
-			if colors[solution[i]] > 0 {
-				cows++
-			}
-			colors[g]++
-			colors[solution[i]]--
-		}
-	}
+	bulls, cows := score(guess, solution)
+	feedbacks = append(feedbacks, feedback{guess, bulls, cows})
 	pegHoles := document.GetElementsByClassName("graderRow" + strconv.Itoa(activeRow))
 	i := 0
 	for ; i < cows; i++ {
-		pegHoles[i].SetAttribute(atom.Src.String(), imageDir+"color_8.gif")
+		pegHoles[i].SetAttribute(atom.Src.String(), imageDir+"color_6.gif")
 	}
 	for ; i < cows+bulls; i++ {
-		pegHoles[i].SetAttribute(atom.Src.String(), imageDir+"color_7.gif")
+		pegHoles[i].SetAttribute(atom.Src.String(), imageDir+"color_5.gif")
 	}
 
-	if bulls == NUM_COLS {
+	if bulls == NUM_COLS || activeRow == NUM_ROWS-1 {
 		showSolution()
-		js.Global.Call("alert", "Congrats! You solved it.")
-		activeRow = -1
-	} else if activeRow == NUM_ROWS-1 {
-		showSolution()
-		js.Global.Call("alert", "Sorry, you're out of tries. See solution.")
 		activeRow = -1
 	} else {
 		activeRow++
-		guess = [NUM_COLS]int{}
+		guess = make([]int, NUM_COLS)
 	}
 }
 

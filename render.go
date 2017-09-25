@@ -44,16 +44,17 @@ func render() *html.Node {
 	}
 	for row := NUM_ROWS - 1; row >= 0; row-- {
 		tr := htmlg.TR()
+		sRow := strconv.Itoa(row)
 		for col := 0; col < NUM_COLS; col++ {
+			sCol := strconv.Itoa(col)
 			img := &html.Node{
 				Type: html.ElementNode, Data: atom.Img.String(),
 				Attr: []html.Attribute{
 					{Key: atom.Src.String(), Val: imageDir + "hole.gif"},
 					{Key: atom.Height.String(), Val: "36"},
 					{Key: atom.Width.String(), Val: "36"},
-					{Key: atom.Onclick.String(), Val: "placeColor(this)"},
-					{Key: dataRowAttr, Val: strconv.Itoa(row)},
-					{Key: dataColAttr, Val: strconv.Itoa(col)},
+					{Key: atom.Onclick.String(), Val: "placeColor(" + sRow + "," + sCol + ")"},
+					{Key: atom.Id.String(), Val: sRow + "-" + sCol},
 				},
 			}
 			tr.AppendChild(htmlg.TD(img))
@@ -64,37 +65,48 @@ func render() *html.Node {
 	table.AppendChild(trials)
 
 	// Color picker
-	for r := 0; r < NUM_COLORS/NUM_COLS; r++ {
-		var tds []*html.Node
-		for i := 1; i <= NUM_COLS; i++ {
-			s := strconv.Itoa(r*NUM_COLS + i)
-			img := &html.Node{
-				Type: html.ElementNode,
-				Data: atom.Img.String(),
-				Attr: []html.Attribute{
-					{Key: atom.Src.String(), Val: imageDir + "color_" + s + ".gif"},
-					{Key: atom.Onclick.String(), Val: "pickColor(" + s + ")"},
-				},
-			}
-			tds = append(tds, htmlg.TD(img))
-		}
-		tr := htmlg.TR(htmlg.TD(TBL(htmlg.TR(tds...))))
-		table.AppendChild(tr)
-	}
-	/*
-		// Allow duplicates checkbox
-		input := &html.Node{
-			Data: atom.Input.String(),
+	var tds []*html.Node
+	for i := 1; i <= NUM_COLORS; i++ {
+		s := strconv.Itoa(i)
+		img := &html.Node{
 			Type: html.ElementNode,
+			Data: atom.Img.String(),
 			Attr: []html.Attribute{
-				{Key: "type", Val: "checkbox"},
-				{Key: atom.Height.String(), Val: "36"},
-				{Key: atom.Width.String(), Val: "36"},
-				{Key: atom.Id.String(), Val: checkBoxID},
+				{Key: atom.Src.String(), Val: imageDir + "color_" + s + ".gif"},
+				{Key: atom.Onclick.String(), Val: "pickColor(" + s + ")"},
 			},
 		}
-		table.AppendChild(htmlg.TR(TBL(htmlg.TR(htmlg.TD(htmlg.Text("Allow Duplicates?")), htmlg.TD(input)))))
-	*/
+		tds = append(tds, htmlg.TD(img))
+	}
+	tr = htmlg.TR(htmlg.TD(TBL(htmlg.TR(tds...))))
+	table.AppendChild(tr)
+
+	// Buttons
+	solver := &html.Node{
+		Data: atom.Input.String(),
+		Type: html.ElementNode,
+		Attr: []html.Attribute{
+			{Key: atom.Onclick.String(), Val: "solve()"},
+			{Key: atom.Value.String(), Val: "I'm Feeling Lazy"},
+			{Key: atom.Type.String(), Val: "button"},
+		},
+	}
+
+	newGame := &html.Node{
+		Data: atom.Input.String(),
+		Type: html.ElementNode,
+		Attr: []html.Attribute{
+			{Key: atom.Onclick.String(), Val: "reload()"},
+			{Key: atom.Value.String(), Val: "New Game"},
+			{Key: atom.Type.String(), Val: "button"},
+		},
+	}
+
+	table.AppendChild(htmlg.TR(TBL(
+		htmlg.TR(htmlg.TD(htmlg.TD(solver))),
+		htmlg.TR(htmlg.TD(htmlg.TD(newGame))),
+	)))
+
 	return &html.Node{
 		Data: atom.Div.String(),
 		Type: html.ElementNode,
