@@ -26,20 +26,16 @@ var (
 	document      dom.HTMLDocument
 	selectedColor int
 	activeRow     int
-	guess         = make([]int, NUM_COLS)
-	solution      = make([]int, NUM_COLS)
+	solution      int
 
-	allCandidates []candidate
-	feedbacks     []feedback
+	//allCandidates  = genAllCandidates(NUM_COLS)
+	allCandidates = []int{}
+	feedbackHash  int
+	guess         int
 )
 
-type candidate struct {
-	code []int
-	score int
-}
-
 type feedback struct {
-	guess []int
+	guess int
 	bulls int
 	cows  int
 }
@@ -55,11 +51,21 @@ func main() {
 	})
 }
 
-func run() {
+func generateSolution() int {
 	rand1 := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := range solution {
-		solution[i] = rand1.Intn(NUM_COLORS) + 1
+	s := 0
+	for i := 0; i < NUM_COLS; i++ {
+		s += rand1.Intn(NUM_COLORS) + 1
+		if i != NUM_COLS-1 {
+			s *= 10
+		}
 	}
+	return s
+}
+
+func run() {
+	solution = generateSolution()
+	println(solution)
 	document.Body().SetInnerHTML(htmlg.Render(render()))
 }
 
@@ -67,25 +73,41 @@ func pickColor(s int) {
 	selectedColor = s
 	document.GetElementByID(gameTableID).SetAttribute(atom.Style.String(), `cursor: url("`+imageDir+`color_`+
 		strconv.Itoa(selectedColor)+`.gif"), auto; border: 3px black solid;`)
+	document.GetElementByID("colorPickerID").SetAttribute(atom.Style.String(), `cursor: url("`+imageDir+`color_`+
+		strconv.Itoa(selectedColor)+`.gif"), auto;`)
+
 }
 
 func placeColor(row, col int) {
-	if selectedColor != -1 && row == activeRow {
+	if selectedColor != 0 && row == activeRow {
 		document.GetElementByID(strconv.Itoa(row)+"-"+strconv.Itoa(col)).SetAttribute(atom.Src.String(),
 			imageDir+"color_"+strconv.Itoa(selectedColor)+".gif")
-		guess[col] = selectedColor
+		guess = updateGuess(col)
 		grade()
 	}
 }
 
+func updateGuess(col int) int {
+	m := 1
+	copyGuess := guess
+	for i := 0; i < NUM_COLS-col-1; i++ {
+		m *= 10
+		copyGuess /= 10
+	}
+	curGuess := copyGuess % 10
+	return guess + m*(selectedColor-curGuess)
+}
+
 func solve() {
 	go func() {
-		allCandidates = genAllCandidates(NUM_COLS)
 		for activeRow != -1 {
-			for i, g := range knuthGuess() {
-				selectedColor = g
-				placeColor(activeRow, i)
+			m := k.move
+			for col := NUM_COLS - 1; col >= 0; col-- {
+				selectedColor = m % 10
+				m /= 10
+				placeColor(activeRow, col)
 			}
+			k = k.bullsAndCows[feedbackHash]
 			time.Sleep(time.Millisecond * 100)
 		}
 	}()
@@ -95,14 +117,23 @@ func reload() {
 	document.Location().Call("reload")
 }
 
-func grade() {
-	for _, g := range guess {
-		if g == 0 {
-			return
+func hasZeros(guess int) bool {
+	for i := 0; i < NUM_COLS; i++ {
+		if guess%10 == 0 {
+			return true
 		}
+		guess /= 10
 	}
+	return false
+}
+
+func grade() {
+	if hasZeros(guess) {
+		return
+	}
+
 	bulls, cows := score(guess, solution)
-	feedbacks = append(feedbacks, feedback{guess, bulls, cows})
+	feedbackHash = hash(bulls, cows)
 	pegHoles := document.GetElementsByClassName("graderRow" + strconv.Itoa(activeRow))
 	i := 0
 	for ; i < cows; i++ {
@@ -117,7 +148,7 @@ func grade() {
 		activeRow = -1
 	} else {
 		activeRow++
-		guess = make([]int, NUM_COLS)
+		guess = 0
 	}
 }
 

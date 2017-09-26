@@ -13,11 +13,25 @@ func render() *html.Node {
 	table := &html.Node{Data: atom.Table.String(), Type: html.ElementNode}
 
 	// Title
-	table.AppendChild(htmlg.Text("Mastermind"))
+	d := &html.Node{
+		Data: atom.Div.String(),
+		Type: html.ElementNode,
+		Attr: []html.Attribute{
+			{Key: atom.Style.String(), Val: "font-size: 30px; margin: 20% auto; color: #756565;"},
+		},
+		FirstChild: htmlg.Text("Play Mastermind"),
+		}
+
+	table.AppendChild(d)
 
 	// Solution
 	tr := htmlg.TR()
-	for _, s := range solution {
+	pieces := make([]int, NUM_COLS)
+
+	for i, copySol := NUM_COLS-1, solution; i >= 0; i, copySol = i-1, copySol/10 {
+		pieces[i] = copySol % 10
+	}
+	for _, s := range pieces {
 		img := &html.Node{
 			Type: html.ElementNode, Data: atom.Img.String(),
 			Attr: []html.Attribute{
@@ -74,11 +88,20 @@ func render() *html.Node {
 			Attr: []html.Attribute{
 				{Key: atom.Src.String(), Val: imageDir + "color_" + s + ".gif"},
 				{Key: atom.Onclick.String(), Val: "pickColor(" + s + ")"},
+				{Key: atom.Onmouseover.String(), Val: "this.style.backgroundColor = '#fedac3'"},
+				{Key: atom.Onmouseout.String(), Val: "this.style.backgroundColor = '#fefefe'"},
 			},
 		}
 		tds = append(tds, htmlg.TD(img))
 	}
-	tr = htmlg.TR(htmlg.TD(TBL(htmlg.TR(tds...))))
+	table4 := &html.Node{
+		Type: html.ElementNode, Data: atom.Table.String(),
+		Attr: []html.Attribute{
+			{Key: atom.Id.String(), Val: "colorPickerID"},
+		},
+	}
+	table4.AppendChild(htmlg.TR(tds...))
+	tr = htmlg.TR(htmlg.TD(table4))
 	table.AppendChild(tr)
 
 	// Buttons
@@ -112,7 +135,7 @@ func render() *html.Node {
 		Type: html.ElementNode,
 		Attr: []html.Attribute{{Key: atom.Style.String(), Val: `text-align: center; margin-top: 50px;`}},
 		FirstChild: &html.Node{
-			Data:       atom.Span.String(),
+			Data:       atom.Div.String(),
 			Type:       html.ElementNode,
 			Attr:       []html.Attribute{{Key: atom.Style.String(), Val: `display: inline-block; margin-left: 30px; margin-right: 30px;`}},
 			FirstChild: table,
