@@ -17,10 +17,10 @@ func render() *html.Node {
 		Data: atom.Div.String(),
 		Type: html.ElementNode,
 		Attr: []html.Attribute{
-			{Key: atom.Style.String(), Val: "font-size: 30px; margin: 20% auto; color: #756565;"},
+			{Key: atom.Style.String(), Val: "font-size: 30px; margin: 10% auto; color: darkred;"},
 		},
 		FirstChild: htmlg.Text("Play Mastermind"),
-		}
+	}
 
 	table.AppendChild(d)
 
@@ -110,7 +110,7 @@ func render() *html.Node {
 		Type: html.ElementNode,
 		Attr: []html.Attribute{
 			{Key: atom.Onclick.String(), Val: "solve()"},
-			{Key: atom.Value.String(), Val: "I'm Feeling Lazy"},
+			{Key: atom.Value.String(), Val: "    Solve     "},
 			{Key: atom.Type.String(), Val: "button"},
 		},
 	}
@@ -133,11 +133,11 @@ func render() *html.Node {
 	return &html.Node{
 		Data: atom.Div.String(),
 		Type: html.ElementNode,
-		Attr: []html.Attribute{{Key: atom.Style.String(), Val: `text-align: center; margin-top: 50px;`}},
+		Attr: []html.Attribute{{Key: atom.Style.String(), Val: `text-align: center;`}},
 		FirstChild: &html.Node{
 			Data:       atom.Div.String(),
 			Type:       html.ElementNode,
-			Attr:       []html.Attribute{{Key: atom.Style.String(), Val: `display: inline-block; margin-left: 30px; margin-right: 30px;`}},
+			Attr:       []html.Attribute{{Key: atom.Style.String(), Val: `display: inline-block;`}},
 			FirstChild: table,
 		},
 	}
