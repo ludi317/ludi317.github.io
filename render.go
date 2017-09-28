@@ -110,8 +110,9 @@ func render() *html.Node {
 		Type: html.ElementNode,
 		Attr: []html.Attribute{
 			{Key: atom.Onclick.String(), Val: "solve()"},
-			{Key: atom.Value.String(), Val: "    Solve     "},
+			{Key: atom.Value.String(), Val: "Solve in 5 or less moves"},
 			{Key: atom.Type.String(), Val: "button"},
+			{Key: atom.Style.String(), Val: `font-size: large;`},
 		},
 	}
 
@@ -122,6 +123,7 @@ func render() *html.Node {
 			{Key: atom.Onclick.String(), Val: "reload()"},
 			{Key: atom.Value.String(), Val: "New Game"},
 			{Key: atom.Type.String(), Val: "button"},
+			{Key: atom.Style.String(), Val: `font-size: large;`},
 		},
 	}
 

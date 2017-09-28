@@ -5,12 +5,17 @@ import (
 	"sort"
 )
 
-type knuth struct {
-	move         int
-	bullsAndCows map[int]knuth
+type feedback struct {
+	guess int
+	bc    int
 }
 
-func score(guess int, solution int) (int, int) {
+type knuth struct {
+	move int
+	next map[int]knuth
+}
+
+func score(guess int, solution int) int {
 	bulls, cows := 0, 0
 	colors := [NUM_COLORS + 1]int{}
 	for ; guess > 0; solution, guess = solution/10, guess/10 {
@@ -29,35 +34,39 @@ func score(guess int, solution int) (int, int) {
 			colors[sCol]--
 		}
 	}
-	return bulls, cows
+	return hash(bulls, cows)
 }
 
-func allFeedback() []feedback {
-	res := []feedback{}
+func allFeedback() []int {
+	res := make([]int, (NUM_COLS+1)*(NUM_COLS+2)/2-1)
+	c := 0
 	for bulls := NUM_COLS; bulls >= 0; bulls-- {
 		for cows := 0; cows <= NUM_COLS-bulls; cows++ {
-			if bulls == 3 && cows == 1 {
+			if bulls == NUM_COLS-1 && cows == 1 {
 				continue
 			}
-			res = append(res, feedback{bulls: bulls, cows: cows})
+			res[c] = hash(bulls, cows)
+			c++
 		}
 	}
 	return res
 }
-
 
 // fortran array indexing
 func hash(bulls, cows int) int {
 	return (NUM_COLS+1)*bulls + cows
 }
 
-// knuthGuess is implementation of Knuth algo that guarantees the solution in <= 5 moves.
-// See: http://www.cs.uni.edu/~wallingf/teaching/cs3530/resources/knuth-mastermind.pdf
+// knuthGuess is implementation of Knuth algorithm that guarantees the solution in <= 5 moves. See:
+// http://www.cs.uni.edu/~wallingf/teaching/cs3530/resources/knuth-mastermind.pdf
+//
+// It plays the code that gives the most information, where information is defined as how much the solution space is
+// reduced. At every turn, it sweeps through all hypothetical feedback for all codes, counting the number of possible
+// solutions remaining if that feedback were given. This number depends on all the feedback already present from prior
+// moves. Each code is scored with the max solution space size of all hypothetical feedback. The code with the smallest
+// score is played. To break ties, codes that are themselves possible solutions are preferred, followed by numerical
+// ordering. More concisely, the code chosen has the min of the max of the possible remaining solutions.
 func knuthGuess(feedbacks []feedback) int {
-	if len(feedbacks) == 0 {
-		return 1122
-	}
-	valid := false
 	scores := make([]int, len(allCandidates))
 	for i, c := range allCandidates {
 		maxPoss := 0
@@ -65,20 +74,14 @@ func knuthGuess(feedbacks []feedback) int {
 		for _, af := range allFeedback() {
 			hf := feedback{
 				guess: c,
-				bulls: af.bulls,
-				cows:  af.cows,
+				bc:    af,
 			}
 			numPoss := numPossibilities(hf, feedbacks)
 			if numPoss > maxPoss {
 				maxPoss = numPoss
-				valid = true
 			}
 		}
 		scores[i] = maxPoss
-	}
-
-	if !valid {
-		return -1
 	}
 
 	// Initialize minScore to its highest possible value: NUM_COLORS^NUM_COLS
@@ -107,18 +110,17 @@ func knuthGuess(feedbacks []feedback) int {
 	if len(candMinScoresPos) > 0 {
 		return allCandidates[candMinScoresPos[0]]
 	}
-	return -1
+	panic(fmt.Sprintf("no possible solutions given feedback %v", feedbacks))
 }
 
 // Forward pass
 func gen(solution int) []feedback {
-	bulls, cows := 0, 0
 	var feedbacks []feedback
-
-	for bulls != NUM_COLS {
+	bc := -1
+	for bc != hash(NUM_COLS, 0) {
 		guess := knuthGuess(feedbacks)
-		bulls, cows = score(guess, solution)
-		feedbacks = append(feedbacks, feedback{guess: guess, bulls: bulls, cows: cows})
+		bc = score(guess, solution)
+		feedbacks = append(feedbacks, feedback{guess: guess, bc: bc})
 		fmt.Printf("%#v\n", feedbacks)
 	}
 	return feedbacks
@@ -130,7 +132,7 @@ func gen2(feed []feedback, keep *[][]feedback) bool {
 		return false
 	}
 	fmt.Println(guess)
-	if len(feed) > 0 && feed[len(feed)-1].bulls == NUM_COLS {
+	if len(feed) > 0 && feed[len(feed)-1].bc == hash(NUM_COLS, 0) {
 		*keep = append(*keep, feed)
 		fmt.Println(*keep)
 		return true
@@ -138,7 +140,7 @@ func gen2(feed []feedback, keep *[][]feedback) bool {
 	for _, f := range allFeedback() {
 		copyFeed := make([]feedback, len(feed)+1)
 		copy(copyFeed, feed)
-		copyFeed[len(copyFeed)-1] = f
+		copyFeed[len(copyFeed)-1] = feedback{bc: f}
 
 		copyFeed[len(copyFeed)-1].guess = guess
 		fmt.Println(copyFeed)
@@ -150,13 +152,12 @@ func gen2(feed []feedback, keep *[][]feedback) bool {
 }
 
 // knuthSolutionGenerator generates a trie of knuth structs that records the move to make for all possible solutions.
-// Each node stores the move to make, and a map. The keys of the map span the range of possible feedback and
-// values are downstream nodes. Output is stored as a variable in solutions.go. It takes ~13 mins to run on my laptop.
-func knuthSolutionGenerator(cs []int) knuth {
+// Each node stores the move to make, and a map. The keys of the map span the range of possible feedback and values are
+// downstream nodes. Output is stored as a variable in solutions.go.
+func knuthSolutionGenerator(cs []int, s int) knuth {
 
-	total := knuth{move: 1122, bullsAndCows: map[int]knuth{}}
+	total := knuth{next: map[int]knuth{}}
 	ch := make(chan knuth)
-	s := 16
 	if s > len(cs) {
 		s = len(cs)
 	}
@@ -168,7 +169,8 @@ func knuthSolutionGenerator(cs []int) knuth {
 		for j := i * s; j < (i+1)*s; j++ {
 			go func(val int) {
 				kk := knuth{}
-				r(0, 0, 0, nil, val, &kk)
+				r(0, 0, nil, val, &kk, total)
+				kk = knuth{next: map[int]knuth{0: kk}}
 				ch <- kk
 				fmt.Println(val)
 			}(cs[j])
@@ -179,34 +181,37 @@ func knuthSolutionGenerator(cs []int) knuth {
 			merge(&total, kk)
 		}
 	}
-	return total
+	return total.next[0]
 }
 
 func merge(m1 *knuth, m2 knuth) {
-	for k2, v2 := range m2.bullsAndCows {
-		for k1, v1 := range m1.bullsAndCows {
-			if k1 == k2 {
-				m1 = &v1
-				m2 = v2
-				merge(m1, m2)
-				return
-			}
+	for k2, v2 := range m2.next {
+		if v1, ok := m1.next[k2]; ok {
+			m1 = &v1
+			m2 = v2
+			merge(m1, m2)
+		} else {
+			(*m1).next[k2] = v2
 		}
-		(*m1).bullsAndCows[k2] = v2
-		return
 	}
 }
 
 // r is a recursive implementation that creates a single branch of the knuth trie.
-func r(cows, bulls int, guess int, fs []feedback, solution int, kk *knuth) {
-	if bulls == NUM_COLS {
+func r(bc int, guess int, fs []feedback, solution int, kk *knuth, total knuth) {
+	if bc == hash(NUM_COLS, 0) {
 		return
 	}
-	guess = knuthGuess(fs)
-	bulls, cows = score(guess, solution)
-	fs = append(fs, feedback{guess: guess, bulls: bulls, cows: cows})
-	r(cows, bulls, guess, fs, solution, kk)
-	*kk = knuth{move: guess, bullsAndCows: map[int]knuth{hash(bulls, cows): *kk}}
+	if next, ok := total.next[bc]; ok && guess == total.move {
+		guess = next.move
+		total = next
+	} else {
+		guess = knuthGuess(fs)
+		total = knuth{}
+	}
+	bc = score(guess, solution)
+	fs = append(fs, feedback{guess: guess, bc: bc})
+	r(bc, guess, fs, solution, kk, total)
+	*kk = knuth{move: guess, next: map[int]knuth{bc: *kk}}
 }
 
 func numPossibilities(hf feedback, fs []feedback) int {
@@ -225,7 +230,7 @@ func numPossibilities(hf feedback, fs []feedback) int {
 // isValid indicates if the candidate is a possible valid solution given the feedback.
 func isValid(c int, fs []feedback) bool {
 	for _, f := range fs {
-		if bulls, cows := score(f.guess, c); bulls != f.bulls || cows != f.cows {
+		if score(f.guess, c) != f.bc {
 			return false
 		}
 	}

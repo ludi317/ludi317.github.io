@@ -3,7 +3,7 @@
 
 Play Mastermind! [Here](https://ludi317.github.io/)
 
-Or, let the computer solve the game for you in at most 5 moves using Knuth's algorithm described here: http://www.cs.uni.edu/~wallingf/teaching/cs3530/resources/knuth-mastermind.pdf
+Or, see the solution solved in 5 or less moves with Knuth's algorithm described [here](http://www.cs.uni.edu/~wallingf/teaching/cs3530/resources/knuth-mastermind.pdf).
 
 ![alt text](https://raw.githubusercontent.com/ludi317/ludi317.github.io/master/mm_image.png)
 

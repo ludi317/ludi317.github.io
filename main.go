@@ -34,12 +34,6 @@ var (
 	guess         int
 )
 
-type feedback struct {
-	guess int
-	bulls int
-	cows  int
-}
-
 func main() {
 	js.Global.Set("pickColor", jsutil.Wrap(pickColor))
 	js.Global.Set("placeColor", jsutil.Wrap(placeColor))
@@ -107,7 +101,7 @@ func solve() {
 				m /= 10
 				placeColor(activeRow, col)
 			}
-			k = k.bullsAndCows[feedbackHash]
+			k = k.next[feedbackHash]
 			time.Sleep(time.Millisecond * 100)
 		}
 	}()
@@ -132,8 +126,9 @@ func grade() {
 		return
 	}
 
-	bulls, cows := score(guess, solution)
-	feedbackHash = hash(bulls, cows)
+	feedbackHash = score(guess, solution)
+	bulls := feedbackHash / (NUM_COLS + 1)
+	cows := feedbackHash % (NUM_COLS + 1)
 	pegHoles := document.GetElementsByClassName("graderRow" + strconv.Itoa(activeRow))
 	i := 0
 	for ; i < cows; i++ {
