@@ -26,9 +26,9 @@ func render() *html.Node {
 
 	// Solution
 	tr := htmlg.TR()
-	pieces := make([]int, NUM_COLS)
+	pieces := make([]int, numCols)
 
-	for i, copySol := NUM_COLS-1, solution; i >= 0; i, copySol = i-1, copySol/10 {
+	for i, copySol := numCols-1, solution; i >= 0; i, copySol = i-1, copySol/10 {
 		pieces[i] = copySol % 10
 	}
 	for _, s := range pieces {
@@ -44,6 +44,7 @@ func render() *html.Node {
 		}
 		tr.AppendChild(htmlg.TD(img))
 	}
+
 	table.AppendChild(tr)
 
 	// Trial rows
@@ -56,10 +57,10 @@ func render() *html.Node {
 			{Key: atom.Style.String(), Val: "border: 3px black solid;"},
 		},
 	}
-	for row := NUM_ROWS - 1; row >= 0; row-- {
+	for row := numRows - 1; row >= 0; row-- {
 		tr := htmlg.TR()
 		sRow := strconv.Itoa(row)
-		for col := 0; col < NUM_COLS; col++ {
+		for col := 0; col < numCols; col++ {
 			sCol := strconv.Itoa(col)
 			img := &html.Node{
 				Type: html.ElementNode, Data: atom.Img.String(),
@@ -80,7 +81,7 @@ func render() *html.Node {
 
 	// Color picker
 	var tds []*html.Node
-	for i := 1; i <= NUM_COLORS; i++ {
+	for i := 1; i <= numColors; i++ {
 		s := strconv.Itoa(i)
 		img := &html.Node{
 			Type: html.ElementNode,
@@ -149,7 +150,7 @@ func renderGrader(row int) *html.Node {
 	trs := []*html.Node{}
 	for i := 0; i < 2; i++ {
 		tr := htmlg.TR()
-		for j := 0; j < NUM_COLS/2; j++ {
+		for j := 0; j < numCols/2; j++ {
 			img := &html.Node{
 				Type: html.ElementNode, Data: atom.Img.String(),
 				Attr: []html.Attribute{

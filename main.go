@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	NUM_ROWS   = 10
-	NUM_COLS   = 4
-	NUM_COLORS = 6
+	numRows   = 10
+	numCols   = 4
+	numColors = 6
 
 	gameTableID   = "gameTableID"
 	solutionClass = "solutionClass"
@@ -28,7 +28,7 @@ var (
 	activeRow     int
 	solution      int
 
-	//allCandidates  = genAllCandidates(NUM_COLS)
+	//allCandidates = genAllCandidates(NUM_COLS)
 	allCandidates = []int{}
 	feedbackHash  int
 	guess         int
@@ -48,9 +48,9 @@ func main() {
 func generateSolution() int {
 	rand1 := rand.New(rand.NewSource(time.Now().UnixNano()))
 	s := 0
-	for i := 0; i < NUM_COLS; i++ {
-		s += rand1.Intn(NUM_COLORS) + 1
-		if i != NUM_COLS-1 {
+	for i := 0; i < numCols; i++ {
+		s += rand1.Intn(numColors) + 1
+		if i != numCols-1 {
 			s *= 10
 		}
 	}
@@ -69,7 +69,6 @@ func pickColor(s int) {
 		strconv.Itoa(selectedColor)+`.gif"), auto; border: 3px black solid;`)
 	document.GetElementByID("colorPickerID").SetAttribute(atom.Style.String(), `cursor: url("`+imageDir+`color_`+
 		strconv.Itoa(selectedColor)+`.gif"), auto;`)
-
 }
 
 func placeColor(row, col int) {
@@ -84,7 +83,7 @@ func placeColor(row, col int) {
 func updateGuess(col int) int {
 	m := 1
 	copyGuess := guess
-	for i := 0; i < NUM_COLS-col-1; i++ {
+	for i := 0; i < numCols-col-1; i++ {
 		m *= 10
 		copyGuess /= 10
 	}
@@ -95,13 +94,13 @@ func updateGuess(col int) int {
 func solve() {
 	go func() {
 		for activeRow != -1 {
-			m := k.move
-			for col := NUM_COLS - 1; col >= 0; col-- {
+			m := kSol.move
+			for col := numCols - 1; col >= 0; col-- {
 				selectedColor = m % 10
 				m /= 10
 				placeColor(activeRow, col)
 			}
-			k = k.next[feedbackHash]
+			kSol = kSol.next[feedbackHash]
 			time.Sleep(time.Millisecond * 100)
 		}
 	}()
@@ -112,7 +111,7 @@ func reload() {
 }
 
 func hasZeros(guess int) bool {
-	for i := 0; i < NUM_COLS; i++ {
+	for i := 0; i < numCols; i++ {
 		if guess%10 == 0 {
 			return true
 		}
@@ -127,8 +126,7 @@ func grade() {
 	}
 
 	feedbackHash = score(guess, solution)
-	bulls := feedbackHash / (NUM_COLS + 1)
-	cows := feedbackHash % (NUM_COLS + 1)
+	bulls, cows := reverseHash(feedbackHash)
 	pegHoles := document.GetElementsByClassName("graderRow" + strconv.Itoa(activeRow))
 	i := 0
 	for ; i < cows; i++ {
@@ -138,7 +136,7 @@ func grade() {
 		pegHoles[i].SetAttribute(atom.Src.String(), imageDir+"color_5.gif")
 	}
 
-	if bulls == NUM_COLS || activeRow == NUM_ROWS-1 {
+	if bulls == numCols || activeRow == numRows-1 {
 		showSolution()
 		activeRow = -1
 	} else {
