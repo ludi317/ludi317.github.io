@@ -132,13 +132,17 @@ func generateKnuthBranchIterNoCache(solution int) []feedback {
 
 	return feedbacks
 }
-
 func generateKnuthBranchIter(solution int, total knuth) knuth {
 	// Forward pass
 	var feedbacks []feedback
 	bc := 0
 	guess := 0
-	for bc != hash(numCols, 0) {
+	valids := make([]validCandidate, len(allCandidates))
+	for i, c := range allCandidates {
+		valids[i].code = c
+		valids[i].valid = true
+	}
+	for bc != allBulls {
 		//total.mutex.Lock()
 		next, ok := total.next[bc]
 		//total.mutex.Unlock()
@@ -146,15 +150,16 @@ func generateKnuthBranchIter(solution int, total knuth) knuth {
 			guess = next.move
 			total = next
 		} else {
-			guess = knuthGuess(feedbacks)
+			//guess = knuthGuess(feedbacks)
+			guess = knuthGuess2(feedbacks, &valids)
 			total = knuth{}
 		}
 		bc = score(guess, solution)
 		feedbacks = append(feedbacks, feedback{guess: guess, bc: bc})
 	}
 	k3 := knuth{}
-	if len(feedbacks) > 5 {
-		//panic("knuth is wrong?!")
+	if len(feedbacks) > maxMoves {
+		maxMoves = len(feedbacks)
 	}
 	for i := len(feedbacks) - 1; i >= 0; i-- {
 		k3.next = map[int]knuth{feedbacks[i].bc: k3}
@@ -325,3 +330,79 @@ func product(a []int, b []int) []int {
 	}
 	return res
 }
+
+
+type validCandidate struct {
+	code  int
+	valid bool
+}
+
+func knuthGuess2(feedbacks []feedback, valids *[]validCandidate) int {
+	scores := make([]int, len(allCandidates))
+	for i, c := range allCandidates {
+		maxPoss := 0
+		// Calculate # of remaining possibilities for every type of feedback. Score is the max of that.
+		for _, af := range allFeedback() {
+			hf := feedback{
+				guess: c,
+				bc:    af,
+			}
+			numPoss := numPossibilities2(hf, feedbacks, valids)
+			if numPoss > maxPoss {
+				maxPoss = numPoss
+			}
+		}
+		scores[i] = maxPoss
+	}
+
+	// Initialize minScore to its highest possible value: NUM_COLORS^NUM_COLS
+	minScore := 1
+	for i := 0; i < numCols; i++ {
+		minScore *= numColors
+	}
+
+	// Choose the candidate that minimizes the (max) remaining possibilities.
+	candMinScoresPos := []int{}
+	for i, s := range scores {
+		if s < minScore {
+			minScore = s
+			candMinScoresPos = []int{i}
+		} else if s == minScore {
+			candMinScoresPos = append(candMinScoresPos, i)
+		}
+	}
+
+	// Prefer candidates that could be the solution.
+	for _, pos := range candMinScoresPos {
+		if isValid(allCandidates[pos], feedbacks) {
+			return allCandidates[pos]
+		}
+	}
+	if len(candMinScoresPos) > 0 {
+		return allCandidates[candMinScoresPos[0]]
+	}
+	panic(fmt.Sprintf("no possible solutions given feedback %v", feedbacks))
+}
+
+
+
+
+func numPossibilities2(hf feedback, fs []feedback, valids *[]validCandidate) int {
+
+	n := 0
+	for idx, c := range allCandidates {
+		if !(*valids)[idx].valid {
+			continue
+		}
+		if !isValid(c, fs) {
+			(*valids)[idx].valid = false
+			continue
+		}
+		if score(hf.guess, c) == hf.bc {
+			n++
+		}
+	}
+	return n
+}
+
+

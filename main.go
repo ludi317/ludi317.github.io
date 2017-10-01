@@ -32,6 +32,8 @@ var (
 	allCandidates = []int{}
 	feedbackHash  int
 	guess         int
+	maxMoves int
+	allBulls = hash(numCols,0)
 )
 
 func main() {
