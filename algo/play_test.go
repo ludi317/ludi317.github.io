@@ -3,16 +3,10 @@ package main
 import (
 	"fmt"
 	"math/rand"
-	"os"
 	"reflect"
 	"testing"
 	"time"
 )
-
-func TestMain(t *testing.M) {
-	allCandidates = genAllCandidates(numCols)
-	os.Exit(t.Run())
-}
 
 func TestKnuthGuess(t *testing.T) {
 	kG := knuthGuess(nil)
@@ -83,7 +77,7 @@ func TestGenAndTime(t *testing.T) {
 	cs := allCandidates
 	if shuffle {
 		r := rand.New(rand.NewSource(time.Now().Unix()))
-		shuffled := genAllCandidates(numCols)
+		shuffled := genAllCandidates()
 		for i := len(shuffled) - 1; i > 0; i-- {
 			rando := r.Intn(i + 1)
 			shuffled[rando], shuffled[i] = shuffled[i], shuffled[rando]

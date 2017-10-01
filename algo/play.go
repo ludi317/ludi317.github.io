@@ -11,13 +11,23 @@ type feedback struct {
 }
 
 type knuth struct {
-	move  int
-	next  map[int]knuth
+	move int
+	next map[int]knuth
 }
+
+const numCols = 4
+const numColors = 6
+
+var (
+	allCandidates = genAllCandidates()
+	allFeedback   = genAllFeedback()
+	maxMoves      int
+	allBulls      = 20
+)
 
 func score(guess int, solution int) int {
 	bulls, cows := 0, 0
-	colors := [numColors + 1]int{}
+	colors := make([]int, numColors+1)
 	for ; guess > 0; solution, guess = solution/10, guess/10 {
 		sCol := solution % 10
 		gCol := guess % 10
@@ -37,7 +47,7 @@ func score(guess int, solution int) int {
 	return hash(bulls, cows)
 }
 
-func allFeedback() []int {
+func genAllFeedback() []int {
 	res := make([]int, (numCols+1)*(numCols+2)/2-1)
 	c := 0
 	for bulls := numCols; bulls >= 0; bulls-- {
@@ -55,9 +65,6 @@ func allFeedback() []int {
 func hash(bulls, cows int) int {
 	return (numCols+1)*bulls + cows
 }
-func reverseHash(hash int) (bulls, cows int) {
-	return hash / (numCols + 1), hash % (numCols + 1)
-}
 
 // knuthGuess is implementation of Knuth algorithm that guarantees the solution in <= 5 moves. See:
 // http://www.cs.uni.edu/~wallingf/teaching/cs3530/resources/knuth-mastermind.pdf
@@ -73,7 +80,7 @@ func knuthGuess(feedbacks []feedback) int {
 	for i, c := range allCandidates {
 		maxPoss := 0
 		// Calculate # of remaining possibilities for every type of feedback. Score is the max of that.
-		for _, af := range allFeedback() {
+		for _, af := range allFeedback {
 			hf := feedback{
 				guess: c,
 				bc:    af,
@@ -86,11 +93,8 @@ func knuthGuess(feedbacks []feedback) int {
 		scores[i] = maxPoss
 	}
 
-	// Initialize minScore to its highest possible value: NUM_COLORS^NUM_COLS
-	minScore := 1
-	for i := 0; i < numCols; i++ {
-		minScore *= numColors
-	}
+	// Initialize minScore to its highest possible value
+	minScore := len(allCandidates)
 
 	// Choose the candidate that minimizes the (max) remaining possibilities.
 	candMinScoresPos := []int{}
@@ -197,7 +201,7 @@ func knuthSolutionGeneratorIter(cs []int, s int) knuth {
 
 		}
 		for i := 0; i < s; i++ {
-			kk :=<-ch
+			kk := <-ch
 			merge(total, kk)
 		}
 	}
@@ -254,7 +258,6 @@ func depth() {
 
 }
 
-
 // genKnuthBranchRec is a recursive implementation that creates a single branch of the knuth trie.
 func genKnuthBranchRec(bc int, guess int, fs []feedback, solution int, kk *knuth, total knuth) {
 	if bc == hash(numCols, 0) {
@@ -302,7 +305,7 @@ func isValid(c int, fs []feedback) bool {
 	return true
 }
 
-func genAllCandidates(numCols int) []int {
+func genAllCandidates() []int {
 	res := genAllCandidatesHelper(numCols)
 	sort.Ints(res)
 	return res
@@ -331,7 +334,6 @@ func product(a []int, b []int) []int {
 	return res
 }
 
-
 type validCandidate struct {
 	code  int
 	valid bool
@@ -342,7 +344,7 @@ func knuthGuess2(feedbacks []feedback, valids *[]validCandidate) int {
 	for i, c := range allCandidates {
 		maxPoss := 0
 		// Calculate # of remaining possibilities for every type of feedback. Score is the max of that.
-		for _, af := range allFeedback() {
+		for _, af := range allFeedback {
 			hf := feedback{
 				guess: c,
 				bc:    af,
@@ -384,9 +386,6 @@ func knuthGuess2(feedbacks []feedback, valids *[]validCandidate) int {
 	panic(fmt.Sprintf("no possible solutions given feedback %v", feedbacks))
 }
 
-
-
-
 func numPossibilities2(hf feedback, fs []feedback, valids *[]validCandidate) int {
 
 	n := 0
@@ -404,5 +403,3 @@ func numPossibilities2(hf feedback, fs []feedback, valids *[]validCandidate) int
 	}
 	return n
 }
-
-
