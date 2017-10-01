@@ -7,9 +7,12 @@ import (
 	"time"
 )
 
+const numCols = 4
+const numColors = 6
+const size = 8
+
 func main() {
 	start := time.Now()
-	size := 8
 	shuffle := true
 	cs := allCandidates
 	if shuffle {
@@ -26,8 +29,8 @@ func main() {
 		size,
 	)
 	fmt.Println(got)
-	fmt.Println(time.Since(start), "batchsize:", size, "with shuffling:", shuffle)
-	if !reflect.DeepEqual(got, kSol) {
+	fmt.Println(time.Since(start), "colors:", numColors, "columns:", numCols, "batchsize:", size)
+	if numCols == 4 && numColors == 6 && !reflect.DeepEqual(got, kSol) {
 		panic(fmt.Sprintf("wrong solution\ngot:\n%v\n\nwant:\n%v", got, kSol))
 	}
 	fmt.Println()

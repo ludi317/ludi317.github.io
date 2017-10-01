@@ -15,9 +15,6 @@ type knuth struct {
 	next map[int]knuth
 }
 
-const numCols = 4
-const numColors = 6
-
 var (
 	allCandidates = genAllCandidates()
 	allFeedback   = genAllFeedback()
