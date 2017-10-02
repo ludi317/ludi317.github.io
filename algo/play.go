@@ -19,7 +19,7 @@ var (
 	allCandidates = genAllCandidates()
 	allFeedback   = genAllFeedback()
 	maxMoves      int
-	allBulls      = 20
+	allBulls      = hash(numCols,0)
 )
 
 func score(guess int, solution int) int {
@@ -355,10 +355,7 @@ func knuthGuess2(feedbacks []feedback, valids *[]validCandidate) int {
 	}
 
 	// Initialize minScore to its highest possible value: NUM_COLORS^NUM_COLS
-	minScore := 1
-	for i := 0; i < numCols; i++ {
-		minScore *= numColors
-	}
+	minScore := len(allCandidates)
 
 	// Choose the candidate that minimizes the (max) remaining possibilities.
 	candMinScoresPos := []int{}
