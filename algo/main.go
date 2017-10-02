@@ -38,6 +38,7 @@ func main() {
 	defer f.Close()
 
 	w := bufio.NewWriter(f)
+	fmt.Println(time.Since(start), "colors:", numColors, "columns:", numCols, "maxMoves:", maxMoves, "batchsize:", size)
 	fmt.Fprintln(w, time.Since(start), "colors:", numColors, "columns:", numCols, "maxMoves:", maxMoves, "batchsize:", size)
 	s := fmt.Sprintf("%#v\n", got)
 	s = strings.Replace(s, "main.", "", -1)

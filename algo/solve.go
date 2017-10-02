@@ -8,6 +8,7 @@ import (
 type feedback struct {
 	guess int
 	bc    int
+	skip  bool
 }
 
 type knuth struct {
@@ -19,7 +20,7 @@ var (
 	allCandidates = genAllCandidates()
 	allFeedback   = genAllFeedback()
 	maxMoves      int
-	allBulls      = hash(numCols,0)
+	allBulls      = hash(numCols, 0)
 )
 
 func score(guess int, solution int) int {
@@ -251,10 +252,6 @@ func merge(m1 knuth, m2 knuth) {
 	}
 }
 
-func depth() {
-
-}
-
 // genKnuthBranchRec is a recursive implementation that creates a single branch of the knuth trie.
 func genKnuthBranchRec(bc int, guess int, fs []feedback, solution int, kk *knuth, total knuth) {
 	if bc == hash(numCols, 0) {
@@ -290,6 +287,18 @@ func numPossibilities(hf feedback, fs []feedback) int {
 		}
 	}
 	return n
+}
+
+// isValid indicates if the candidate is a possible valid solution given the feedback.
+func isValid2(c int, fs []feedback) bool {
+	for _, f := range fs {
+		if !f.skip {
+			if score(f.guess, c) != f.bc {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // isValid indicates if the candidate is a possible valid solution given the feedback.
@@ -338,20 +347,9 @@ type validCandidate struct {
 
 func knuthGuess2(feedbacks []feedback, valids *[]validCandidate) int {
 	scores := make([]int, len(allCandidates))
-	for i, c := range allCandidates {
-		maxPoss := 0
-		// Calculate # of remaining possibilities for every type of feedback. Score is the max of that.
-		for _, af := range allFeedback {
-			hf := feedback{
-				guess: c,
-				bc:    af,
-			}
-			numPoss := numPossibilities2(hf, feedbacks, valids)
-			if numPoss > maxPoss {
-				maxPoss = numPoss
-			}
-		}
-		scores[i] = maxPoss
+	for i, hypoGuess := range allCandidates {
+		// Calculate max # of remaining possibilities over all feedback.
+		scores[i] = maxSolutionSpaceSize(hypoGuess, &feedbacks, valids)
 	}
 
 	// Initialize minScore to its highest possible value: NUM_COLORS^NUM_COLS
@@ -370,30 +368,42 @@ func knuthGuess2(feedbacks []feedback, valids *[]validCandidate) int {
 
 	// Prefer candidates that could be the solution.
 	for _, pos := range candMinScoresPos {
-		if isValid(allCandidates[pos], feedbacks) {
+		if (*valids)[pos].valid {
 			return allCandidates[pos]
 		}
 	}
-	if len(candMinScoresPos) > 0 {
-		return allCandidates[candMinScoresPos[0]]
-	}
-	panic(fmt.Sprintf("no possible solutions given feedback %v", feedbacks))
+	// out of range index panic here means there were no possible solutions given feedback
+	return allCandidates[candMinScoresPos[0]]
 }
 
-func numPossibilities2(hf feedback, fs []feedback, valids *[]validCandidate) int {
+func maxSolutionSpaceSize(hypoGuess int, fs *[]feedback, valids *[]validCandidate) int {
 
-	n := 0
+	solutionSpace := make([]int, len(allFeedback))
 	for idx, c := range allCandidates {
 		if !(*valids)[idx].valid {
 			continue
 		}
-		if !isValid(c, fs) {
+		if !isValid2(c, *fs) {
 			(*valids)[idx].valid = false
 			continue
 		}
-		if score(hf.guess, c) == hf.bc {
-			n++
+		for i, hypoFeedback := range allFeedback {
+			// can c be a solution?
+			if score(hypoGuess, c) == hypoFeedback {
+				solutionSpace[i]++
+			}
 		}
 	}
-	return n
+	for i := range *fs {
+		if !(*fs)[i].skip {
+			(*fs)[i].skip = true
+		}
+	}
+	maxSS := 0
+	for _, s := range solutionSpace {
+		if s > maxSS {
+			maxSS = s
+		}
+	}
+	return maxSS
 }
