@@ -9,7 +9,11 @@ import (
 )
 
 func TestKnuthGuess(t *testing.T) {
-	kG := knuthGuess(nil)
+	valids := make([]validCandidate, len(allCandidates))
+	for i, c := range allCandidates {
+		valids[i].code = c
+	}
+	kG := knuthGuess(nil, &valids)
 	firstRes := 1122
 	if !reflect.DeepEqual(kG, firstRes) {
 		t.Errorf("got: %v, want: %v", kG, firstRes)
@@ -25,16 +29,10 @@ func TestScore(t *testing.T) {
 
 func TestGen(t *testing.T) {
 	// This example comes from p3 of the Knuth mastermind paper.
-	gotF := generateKnuthBranchIterNoCache(3632)
-	expectedF3632 := []feedback{
-		{guess: 1122, bc: hash(1, 0)},
-		{guess: 1344, bc: hash(0, 1)},
-		{guess: 3526, bc: hash(1, 2)},
-		{guess: 1462, bc: hash(1, 1)},
-		{guess: 3632, bc: hash(4, 0)},
-	}
+	gotF := generateKnuthBranchIter(3632, knuth{})
+	expectedF3632 := knuth{move: 1122, next: map[int]knuth{5: {move: 1344, next: map[int]knuth{1: {move: 3526, next: map[int]knuth{7: {move: 1462, next: map[int]knuth{6: {move: 3632, next: map[int]knuth{20: {move: 0, next: map[int]knuth(nil)}}}}}}}}}}}
 	if !reflect.DeepEqual(gotF, expectedF3632) {
-		t.Errorf("got %v, expected %v", gotF, expectedF3632)
+		t.Errorf("got %#v, expected %#v", gotF, expectedF3632)
 	}
 }
 
@@ -44,7 +42,11 @@ func TestR(t *testing.T) {
 	//total := knuth{0, map[int]knuth{0: expectedK3632}}
 	total := expectedK3632
 	kk := knuth{}
-	genKnuthBranchRec(0, 0, nil, 3632, &kk, total)
+	valids := make([]validCandidate, len(allCandidates))
+	for i, c := range allCandidates {
+		valids[i].code = c
+	}
+	genKnuthBranchRec(0, 0, nil, 3632, &kk, total, &valids)
 	if !reflect.DeepEqual(kk, expectedK3632) {
 		t.Errorf("got %v, expected %v", kk, expectedK3632)
 	}
