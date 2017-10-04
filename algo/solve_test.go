@@ -9,11 +9,8 @@ import (
 )
 
 func TestKnuthGuess(t *testing.T) {
-	valids := make([]validCandidate, len(allCandidates))
-	for i, c := range allCandidates {
-		valids[i].code = c
-	}
-	kG := knuthGuess(nil, &valids)
+	invalids := make([]bool, len(allCandidates))
+	kG := knuthGuess(nil, &invalids)
 	firstRes := 1122
 	if !reflect.DeepEqual(kG, firstRes) {
 		t.Errorf("got: %v, want: %v", kG, firstRes)
@@ -27,7 +24,7 @@ func TestScore(t *testing.T) {
 	}
 }
 
-func TestGen(t *testing.T) {
+func TestKnuthBranchIter(t *testing.T) {
 	// This example comes from p3 of the Knuth mastermind paper.
 	gotF := generateKnuthBranchIter(3632, knuth{})
 	expectedF3632 := knuth{move: 1122, next: map[int]knuth{5: {move: 1344, next: map[int]knuth{1: {move: 3526, next: map[int]knuth{7: {move: 1462, next: map[int]knuth{6: {move: 3632, next: map[int]knuth{20: {move: 0, next: map[int]knuth(nil)}}}}}}}}}}}
@@ -36,16 +33,13 @@ func TestGen(t *testing.T) {
 	}
 }
 
-func TestR(t *testing.T) {
+func TestKnuthBranchRec(t *testing.T) {
 	expectedK3632 := knuth{
 		move: 1122, next: map[int]knuth{5: {move: 1344, next: map[int]knuth{1: {move: 3526, next: map[int]knuth{7: {move: 1462, next: map[int]knuth{6: {move: 3632, next: map[int]knuth{20: {move: 0, next: map[int]knuth(nil)}}}}}}}}}}}
 	//total := knuth{0, map[int]knuth{0: expectedK3632}}
 	total := expectedK3632
 	kk := knuth{}
-	valids := make([]validCandidate, len(allCandidates))
-	for i, c := range allCandidates {
-		valids[i].code = c
-	}
+	valids := make([]bool, len(allCandidates))
 	genKnuthBranchRec(0, 0, nil, 3632, &kk, total, &valids)
 	if !reflect.DeepEqual(kk, expectedK3632) {
 		t.Errorf("got %v, expected %v", kk, expectedK3632)
@@ -53,7 +47,7 @@ func TestR(t *testing.T) {
 	fmt.Println(total)
 }
 
-func TestKnuthGen(t *testing.T) {
+func TestKnuthSolutionGeneratorIter(t *testing.T) {
 	expected := knuth{move: 1122, next: map[int]knuth{5: {move: 1344, next: map[int]knuth{1: {move: 3526, next: map[int]knuth{7: {move: 1462, next: map[int]knuth{6: {move: 3632, next: map[int]knuth{20: {move: 0, next: map[int]knuth(nil)}}}}}}}, 0: {move: 5525, next: map[int]knuth{2: {move: 6652, next: map[int]knuth{20: {move: 0, next: map[int]knuth(nil)}}}}}}}}}
 	got := knuthSolutionGeneratorIter([]int{3632, 6652}, 1)
 

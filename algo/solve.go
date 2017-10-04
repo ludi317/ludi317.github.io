@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 var (
 	allCandidates = genAllCandidates()
 	allFeedback   = genAllFeedback()
@@ -22,27 +18,18 @@ type knuth struct {
 	next map[int]knuth
 }
 
-type validCandidate struct {
-	code    int
-	invalid bool
-}
-
 func generateKnuthBranchIter(solution int, total knuth) knuth {
-	// Forward pass
 	var feedbacks []feedback
 	bc := 0
 	guess := 0
-	valids := make([]validCandidate, len(allCandidates))
-	for i, c := range allCandidates {
-		valids[i].code = c
-	}
+	invalids := make([]bool, len(allCandidates))
 	for bc != allBulls {
 		next, ok := total.next[bc]
 		if ok {
 			guess = next.move
 			total = next
 		} else {
-			guess = knuthGuess(feedbacks, &valids)
+			guess = knuthGuess(feedbacks, &invalids)
 			total = knuth{}
 		}
 		bc = score(guess, solution)
@@ -65,91 +52,36 @@ func generateKnuthBranchIter(solution int, total knuth) knuth {
 func knuthSolutionGeneratorIter(cs []int, s int) knuth {
 
 	total := knuth{next: map[int]knuth{}}
-	ch := make(chan knuth)
 	if s > len(cs) {
 		s = len(cs)
 	}
 	if len(cs)%s != 0 {
 		panic("bad batch size")
 	}
+	ch := make(chan knuth, s)
+	ch2 := make(chan bool, s)
 	batches := len(cs) / s
 	for i := 0; i < batches; i++ {
 		for j := i * s; j < (i+1)*s; j++ {
-
 			go func(val int) {
-
+				// Concurrent reads on the total trie.
 				kk := generateKnuthBranchIter(val, total)
-
 				kk = knuth{next: map[int]knuth{0: kk}}
 				ch <- kk
-
-				fmt.Println(val)
+				ch2 <- true
 			}(cs[j])
-
 		}
+		for i := 0; i < s; i++ {
+			<-ch2
+		}
+		// All goroutines have finished by now.
+		// At this point it is safe to write to the total trie.
 		for i := 0; i < s; i++ {
 			kk := <-ch
 			merge(total, kk)
 		}
 	}
 	return total.next[0]
-}
-
-// knuthSolutionGeneratorRec is the recursive implementation of knuthSolutionGeneratorIter.
-func knuthSolutionGeneratorRec(cs []int, s int) knuth {
-
-	total := knuth{next: map[int]knuth{}}
-	ch := make(chan knuth)
-	if s > len(cs) {
-		s = len(cs)
-	}
-	if len(cs)%s != 0 {
-		panic("bad batch size")
-	}
-	batches := len(cs) / s
-	for i := 0; i < batches; i++ {
-		for j := i * s; j < (i+1)*s; j++ {
-			go func(val int) {
-
-				kk := knuth{}
-				valids := make([]validCandidate, len(allCandidates))
-				for i, c := range allCandidates {
-					valids[i].code = c
-				}
-				genKnuthBranchRec(0, 0, nil, val, &kk, total, &valids)
-
-				kk = knuth{next: map[int]knuth{0: kk}}
-				ch <- kk
-				fmt.Println(val)
-
-			}(cs[j])
-
-		}
-		for i := 0; i < s; i++ {
-			kk := <-ch
-			merge(total, kk)
-		}
-	}
-	return total.next[0]
-}
-
-// genKnuthBranchRec is a recursive implementation that creates a single branch of the knuth trie.
-func genKnuthBranchRec(bc int, guess int, fs []feedback, solution int, kk *knuth, total knuth, valids *[]validCandidate) {
-	if bc == hash(numCols, 0) {
-		return
-	}
-	next, ok := total.next[bc]
-	if ok {
-		guess = next.move
-		total = next
-	} else {
-		guess = knuthGuess(fs, valids)
-		total = knuth{}
-	}
-	bc = score(guess, solution)
-	fs = append(fs, feedback{guess: guess, bc: bc})
-	genKnuthBranchRec(bc, guess, fs, solution, kk, total, valids)
-	*kk = knuth{move: guess, next: map[int]knuth{bc: *kk}}
 }
 
 // isValid indicates if the candidate is a possible valid solution given the feedback.
@@ -173,11 +105,11 @@ func isValid(c int, fs []feedback) bool {
 // moves. Each code is scored with the max solution space size of all hypothetical feedback. The code with the smallest
 // score is played. To break ties, codes that are themselves possible solutions are preferred, followed by numerical
 // ordering. More concisely, the code chosen has the min of the max of the possible remaining solutions.
-func knuthGuess(feedbacks []feedback, valids *[]validCandidate) int {
+func knuthGuess(feedbacks []feedback, invalids *[]bool) int {
 	scores := make([]int, len(allCandidates))
 	for i, hypoGuess := range allCandidates {
-		// Calculate max # of remaining possibilities over all feedback.
-		scores[i] = maxSolutionSpaceSize(hypoGuess, &feedbacks, valids)
+		// Calculate max number of remaining possibilities over all feedback.
+		scores[i] = maxSolutionSpaceSize(hypoGuess, &feedbacks, invalids)
 	}
 
 	// Initialize minScore to its highest possible value.
@@ -196,7 +128,7 @@ func knuthGuess(feedbacks []feedback, valids *[]validCandidate) int {
 
 	// Prefer candidates that could be the solution.
 	for _, pos := range candMinScoresPos {
-		if !(*valids)[pos].invalid {
+		if !(*invalids)[pos] {
 			return allCandidates[pos]
 		}
 	}
@@ -204,14 +136,14 @@ func knuthGuess(feedbacks []feedback, valids *[]validCandidate) int {
 	return allCandidates[candMinScoresPos[0]]
 }
 
-func maxSolutionSpaceSize(hypoGuess int, fs *[]feedback, valids *[]validCandidate) int {
+func maxSolutionSpaceSize(hypoGuess int, fs *[]feedback, invalids *[]bool) int {
 	solutionSpace := make([]int, len(allFeedback))
 	for idx, c := range allCandidates {
-		if (*valids)[idx].invalid {
+		if (*invalids)[idx] {
 			continue
 		}
 		if !isValid(c, *fs) {
-			(*valids)[idx].invalid = true
+			(*invalids)[idx] = true
 			continue
 		}
 		for i, hypoFeedback := range allFeedback {
@@ -233,4 +165,23 @@ func maxSolutionSpaceSize(hypoGuess int, fs *[]feedback, valids *[]validCandidat
 		}
 	}
 	return maxSS
+}
+
+// genKnuthBranchRec is a recursive implementation that creates a single branch of the knuth trie.
+func genKnuthBranchRec(bc int, guess int, fs []feedback, solution int, kk *knuth, total knuth, invalids *[]bool) {
+	if bc == hash(numCols, 0) {
+		return
+	}
+	next, ok := total.next[bc]
+	if ok {
+		guess = next.move
+		total = next
+	} else {
+		guess = knuthGuess(fs, invalids)
+		total = knuth{}
+	}
+	bc = score(guess, solution)
+	fs = append(fs, feedback{guess: guess, bc: bc})
+	genKnuthBranchRec(bc, guess, fs, solution, kk, total, invalids)
+	*kk = knuth{move: guess, next: map[int]knuth{bc: *kk}}
 }
