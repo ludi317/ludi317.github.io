@@ -9,7 +9,7 @@ import (
 )
 
 func TestKnuthGuess(t *testing.T) {
-	invalids := make([]bool, len(allCandidates))
+	invalids := make([]bool, len(allCodes))
 	kG := knuthGuess(nil, &invalids)
 	firstRes := 1122
 	if !reflect.DeepEqual(kG, firstRes) {
@@ -39,7 +39,7 @@ func TestKnuthBranchRec(t *testing.T) {
 	//total := knuth{0, map[int]knuth{0: expectedK3632}}
 	total := expectedK3632
 	kk := knuth{}
-	valids := make([]bool, len(allCandidates))
+	valids := make([]bool, len(allCodes))
 	genKnuthBranchRec(0, 0, nil, 3632, &kk, total, &valids)
 	if !reflect.DeepEqual(kk, expectedK3632) {
 		t.Errorf("got %v, expected %v", kk, expectedK3632)
@@ -56,7 +56,7 @@ func TestKnuthSolutionGeneratorIter(t *testing.T) {
 	}
 
 	got = knuthSolutionGeneratorIter(
-		allCandidates[:2],
+		allCodes[:2],
 		2,
 	)
 	fmt.Println(got)
@@ -70,10 +70,10 @@ func TestGenAndTime(t *testing.T) {
 	start := time.Now()
 	size := 8
 	shuffle := true
-	cs := allCandidates
+	cs := allCodes
 	if shuffle {
 		r := rand.New(rand.NewSource(time.Now().Unix()))
-		shuffled := genAllCandidates()
+		shuffled := genAllCodes()
 		for i := len(shuffled) - 1; i > 0; i-- {
 			rando := r.Intn(i + 1)
 			shuffled[rando], shuffled[i] = shuffled[i], shuffled[rando]

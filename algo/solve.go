@@ -1,10 +1,10 @@
 package main
 
 var (
-	allCandidates = genAllCandidates()
-	allFeedback   = genAllFeedback()
-	maxMoves      int
-	allBulls      = hash(numCols, 0)
+	allCodes    = genAllCodes()
+	allFeedback = genAllFeedback()
+	maxMoves    int
+	allBulls    = hash(numCols, 0)
 )
 
 type feedback struct {
@@ -22,7 +22,7 @@ func generateKnuthBranchIter(solution int, total knuth) knuth {
 	var feedbacks []feedback
 	bc := 0
 	guess := 0
-	invalids := make([]bool, len(allCandidates))
+	invalids := make([]bool, len(allCodes))
 	for bc != allBulls {
 		next, ok := total.next[bc]
 		if ok {
@@ -49,34 +49,35 @@ func generateKnuthBranchIter(solution int, total knuth) knuth {
 // knuthSolutionGeneratorIter generates a trie of knuth structs that records the move to make for all possible solutions.
 // Each node stores the move to make, and a map. The keys of the map span the range of possible feedback and values are
 // downstream nodes. Output is stored as a variable in solutions.go.
-func knuthSolutionGeneratorIter(cs []int, s int) knuth {
+func knuthSolutionGeneratorIter(batchSize int) knuth {
 
 	total := knuth{next: map[int]knuth{}}
-	if s > len(cs) {
-		s = len(cs)
+	if batchSize > len(allCodes) {
+		batchSize = len(allCodes)
 	}
-	if len(cs)%s != 0 {
+	if len(allCodes)%batchSize != 0 {
 		panic("bad batch size")
 	}
-	ch := make(chan knuth, s)
-	ch2 := make(chan bool, s)
-	batches := len(cs) / s
+	shuffledCodes := shuffle()
+	ch := make(chan knuth, batchSize)
+	ch2 := make(chan bool, batchSize)
+	batches := len(allCodes) / batchSize
 	for i := 0; i < batches; i++ {
-		for j := i * s; j < (i+1)*s; j++ {
+		for j := i * batchSize; j < (i+1)*batchSize; j++ {
 			go func(val int) {
 				// Concurrent reads on the total trie.
 				kk := generateKnuthBranchIter(val, total)
 				kk = knuth{next: map[int]knuth{0: kk}}
 				ch <- kk
 				ch2 <- true
-			}(cs[j])
+			}(shuffledCodes[j])
 		}
-		for i := 0; i < s; i++ {
+		for i := 0; i < batchSize; i++ {
 			<-ch2
 		}
 		// All goroutines have finished by now.
 		// At this point it is safe to write to the total trie.
-		for i := 0; i < s; i++ {
+		for i := 0; i < batchSize; i++ {
 			kk := <-ch
 			merge(total, kk)
 		}
@@ -106,14 +107,14 @@ func isValid(c int, fs []feedback) bool {
 // score is played. To break ties, codes that are themselves possible solutions are preferred, followed by numerical
 // ordering. More concisely, the code chosen has the min of the max of the possible remaining solutions.
 func knuthGuess(feedbacks []feedback, invalids *[]bool) int {
-	scores := make([]int, len(allCandidates))
-	for i, hypoGuess := range allCandidates {
+	scores := make([]int, len(allCodes))
+	for i, hypoGuess := range allCodes {
 		// Calculate max number of remaining possibilities over all feedback.
 		scores[i] = maxSolutionSpaceSize(hypoGuess, &feedbacks, invalids)
 	}
 
 	// Initialize minScore to its highest possible value.
-	minScore := len(allCandidates)
+	minScore := len(allCodes)
 
 	// Choose the candidate that minimizes the (max) remaining possibilities.
 	candMinScoresPos := []int{}
@@ -129,16 +130,16 @@ func knuthGuess(feedbacks []feedback, invalids *[]bool) int {
 	// Prefer candidates that could be the solution.
 	for _, pos := range candMinScoresPos {
 		if !(*invalids)[pos] {
-			return allCandidates[pos]
+			return allCodes[pos]
 		}
 	}
 	// out of range index panic here means there were no possible solutions given feedback
-	return allCandidates[candMinScoresPos[0]]
+	return allCodes[candMinScoresPos[0]]
 }
 
 func maxSolutionSpaceSize(hypoGuess int, fs *[]feedback, invalids *[]bool) int {
 	solutionSpace := make([]int, len(allFeedback))
-	for idx, c := range allCandidates {
+	for idx, c := range allCodes {
 		if (*invalids)[idx] {
 			continue
 		}
