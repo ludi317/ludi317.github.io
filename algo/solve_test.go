@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"reflect"
 	"testing"
 	"time"
@@ -44,52 +43,15 @@ func TestKnuthBranchRec(t *testing.T) {
 	if !reflect.DeepEqual(kk, expectedK3632) {
 		t.Errorf("got %v, expected %v", kk, expectedK3632)
 	}
-	fmt.Println(total)
-}
-
-func TestKnuthSolutionGeneratorIter(t *testing.T) {
-	expected := knuth{move: 1122, next: map[int]knuth{5: {move: 1344, next: map[int]knuth{1: {move: 3526, next: map[int]knuth{7: {move: 1462, next: map[int]knuth{6: {move: 3632, next: map[int]knuth{20: {move: 0, next: map[int]knuth(nil)}}}}}}}, 0: {move: 5525, next: map[int]knuth{2: {move: 6652, next: map[int]knuth{20: {move: 0, next: map[int]knuth(nil)}}}}}}}}}
-	got := knuthSolutionGeneratorIter([]int{3632, 6652}, 1)
-
-	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("got \n%v, expected \n%v", got, expected)
-	}
-
-	got = knuthSolutionGeneratorIter(
-		allCodes[:2],
-		2,
-	)
-	fmt.Println(got)
-	expected = knuth{move: 1122, next: map[int]knuth{15: {move: 1223, next: map[int]knuth{6: {move: 1114, next: map[int]knuth{15: {move: 1112, next: map[int]knuth{20: {move: 0, next: map[int]knuth(nil)}}}}}}}, 10: {move: 1234, next: map[int]knuth{5: {move: 1315, next: map[int]knuth{10: {move: 1111, next: map[int]knuth{20: {move: 0, next: map[int]knuth(nil)}}}}}}}}}
-	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("got \n%v, expected \n%v", got, expected)
-	}
 }
 
 func TestGenAndTime(t *testing.T) {
 	start := time.Now()
-	size := 8
-	shuffle := true
-	cs := allCodes
-	if shuffle {
-		r := rand.New(rand.NewSource(time.Now().Unix()))
-		shuffled := genAllCodes()
-		for i := len(shuffled) - 1; i > 0; i-- {
-			rando := r.Intn(i + 1)
-			shuffled[rando], shuffled[i] = shuffled[i], shuffled[rando]
-		}
-		cs = shuffled
-	}
-	got := knuthSolutionGeneratorIter(
-		cs,
-		size,
-	)
-	fmt.Println(got)
-	fmt.Println(time.Since(start), "batchsize:", size, "with shuffling:", shuffle)
-	if !reflect.DeepEqual(got, kSol) {
+	got := knuthSolutionGeneratorIter()
+	fmt.Println(time.Since(start))
+	if numCols == 4 && numColors == 6 && !reflect.DeepEqual(got, kSol) {
 		t.Errorf("wrong solution\ngot:\n%v\n\nwant:\n%v", got, kSol)
 	}
-	fmt.Println()
 }
 
 func TestMerge(t *testing.T) {

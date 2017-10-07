@@ -2,8 +2,8 @@ package main
 
 import (
 	"math/rand"
+	"runtime"
 	"sort"
-	"time"
 )
 
 func merge(m1 knuth, m2 knuth) {
@@ -113,11 +113,18 @@ func product(a []int, b []int) []int {
 }
 
 func shuffle() []int {
-	r := rand.New(rand.NewSource(time.Now().Unix()))
 	shuffledCodes := genAllCodes()
 	for i := len(shuffledCodes) - 1; i > 0; i-- {
-		rando := r.Intn(i + 1)
+		rando := rand.Intn(i + 1)
 		shuffledCodes[rando], shuffledCodes[i] = shuffledCodes[i], shuffledCodes[rando]
 	}
 	return shuffledCodes
+}
+
+func getBatchSize() int {
+	batchSize := runtime.NumCPU()
+	for len(allCodes)%batchSize != 0 {
+		batchSize--
+	}
+	return batchSize
 }

@@ -49,15 +49,10 @@ func generateKnuthBranchIter(solution int, total knuth) knuth {
 // knuthSolutionGeneratorIter generates a trie of knuth structs that records the move to make for all possible solutions.
 // Each node stores the move to make, and a map. The keys of the map span the range of possible feedback and values are
 // downstream nodes. Output is stored as a variable in solutions.go.
-func knuthSolutionGeneratorIter(batchSize int) knuth {
+func knuthSolutionGeneratorIter() knuth {
 
 	total := knuth{next: map[int]knuth{}}
-	if batchSize > len(allCodes) {
-		batchSize = len(allCodes)
-	}
-	if len(allCodes)%batchSize != 0 {
-		panic("bad batch size")
-	}
+	batchSize := getBatchSize()
 	shuffledCodes := shuffle()
 	ch := make(chan knuth, batchSize)
 	ch2 := make(chan bool, batchSize)
