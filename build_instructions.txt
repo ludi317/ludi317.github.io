@@ -1,0 +1,8 @@
+1. Install gopherjs
+go install  github.com/gopherjs/gopherjs
+
+2. Run gopherjs build in top directory
+gopherjs build -o mastermind.js
+
+3. Open index.html in Chrome browser
+/Users/lrehak/go/src/github.com/ludi317/ludi317.github.io/index.html
