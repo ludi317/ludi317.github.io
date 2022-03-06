@@ -111,7 +111,7 @@ func render() *html.Node {
 		Type: html.ElementNode,
 		Attr: []html.Attribute{
 			{Key: atom.Onclick.String(), Val: "solve()"},
-			{Key: atom.Value.String(), Val: "Solve in 5 or less moves"},
+			{Key: atom.Value.String(), Val: "Solve within 5 moves"},
 			{Key: atom.Type.String(), Val: "button"},
 			{Key: atom.Style.String(), Val: `font-size: large;`},
 		},
@@ -154,7 +154,7 @@ func renderGrader(row int) *html.Node {
 			img := &html.Node{
 				Type: html.ElementNode, Data: atom.Img.String(),
 				Attr: []html.Attribute{
-					{Key: atom.Src.String(), Val: ""},
+					{Key: atom.Src.String(), Val: imageDir + "hole3.gif"},
 					{Key: atom.Height.String(), Val: "14"},
 					{Key: atom.Width.String(), Val: "14"},
 					{Key: atom.Class.String(), Val: "graderRow" + strconv.Itoa(row)},

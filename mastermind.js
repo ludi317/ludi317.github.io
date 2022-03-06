@@ -42409,7 +42409,7 @@ $packages["github.com/ludi317/ludi317.github.io"] = (function() {
 		table4.AppendChild(htmlg.TR(tds));
 		tr = htmlg.TR(new sliceType$1([htmlg.TD(new sliceType$1([table4]))]));
 		table.AppendChild(tr);
-		solver = new html.Node.ptr(ptrType.nil, ptrType.nil, ptrType.nil, ptrType.nil, ptrType.nil, 3, 0, new atom.Atom(281349).String(), "", new sliceType([new html.Attribute.ptr("", new atom.Atom(193799).String(), "solve()"), new html.Attribute.ptr("", new atom.Atom(5381).String(), "Solve in 5 or less moves"), new html.Attribute.ptr("", new atom.Atom(55556).String(), "button"), new html.Attribute.ptr("", new atom.Atom(458501).String(), "font-size: large;")]));
+		solver = new html.Node.ptr(ptrType.nil, ptrType.nil, ptrType.nil, ptrType.nil, ptrType.nil, 3, 0, new atom.Atom(281349).String(), "", new sliceType([new html.Attribute.ptr("", new atom.Atom(193799).String(), "solve()"), new html.Attribute.ptr("", new atom.Atom(5381).String(), "Solve within 5 moves"), new html.Attribute.ptr("", new atom.Atom(55556).String(), "button"), new html.Attribute.ptr("", new atom.Atom(458501).String(), "font-size: large;")]));
 		newGame = new html.Node.ptr(ptrType.nil, ptrType.nil, ptrType.nil, ptrType.nil, ptrType.nil, 3, 0, new atom.Atom(281349).String(), "", new sliceType([new html.Attribute.ptr("", new atom.Atom(193799).String(), "reload()"), new html.Attribute.ptr("", new atom.Atom(5381).String(), "New Game"), new html.Attribute.ptr("", new atom.Atom(55556).String(), "button"), new html.Attribute.ptr("", new atom.Atom(458501).String(), "font-size: large;")]));
 		table.AppendChild(htmlg.TR(new sliceType$1([TBL(new sliceType$1([htmlg.TR(new sliceType$1([htmlg.TD(new sliceType$1([htmlg.TD(new sliceType$1([solver]))]))])), htmlg.TR(new sliceType$1([htmlg.TD(new sliceType$1([htmlg.TD(new sliceType$1([newGame]))]))]))]))])));
 		return new html.Node.ptr(ptrType.nil, new html.Node.ptr(ptrType.nil, table, ptrType.nil, ptrType.nil, ptrType.nil, 3, 0, new atom.Atom(92931).String(), "", new sliceType([new html.Attribute.ptr("", new atom.Atom(458501).String(), "display: inline-block;")])), ptrType.nil, ptrType.nil, ptrType.nil, 3, 0, new atom.Atom(92931).String(), "", new sliceType([new html.Attribute.ptr("", new atom.Atom(458501).String(), "text-align: center;")]));
@@ -42424,7 +42424,7 @@ $packages["github.com/ludi317/ludi317.github.io"] = (function() {
 			j = 0;
 			while (true) {
 				if (!(j < 2)) { break; }
-				img = new html.Node.ptr(ptrType.nil, ptrType.nil, ptrType.nil, ptrType.nil, ptrType.nil, 3, 0, new atom.Atom(198403).String(), "", new sliceType([new html.Attribute.ptr("", new atom.Atom(376835).String(), ""), new html.Attribute.ptr("", new atom.Atom(20998).String(), "14"), new html.Attribute.ptr("", new atom.Atom(411909).String(), "14"), new html.Attribute.ptr("", new atom.Atom(353285).String(), "graderRow" + strconv.Itoa(row))]));
+				img = new html.Node.ptr(ptrType.nil, ptrType.nil, ptrType.nil, ptrType.nil, ptrType.nil, 3, 0, new atom.Atom(198403).String(), "", new sliceType([new html.Attribute.ptr("", new atom.Atom(376835).String(), "images/hole3.gif"), new html.Attribute.ptr("", new atom.Atom(20998).String(), "14"), new html.Attribute.ptr("", new atom.Atom(411909).String(), "14"), new html.Attribute.ptr("", new atom.Atom(353285).String(), "graderRow" + strconv.Itoa(row))]));
 				tr.AppendChild(htmlg.TD(new sliceType$1([img])));
 				j = j + (1) >> 0;
 			}
