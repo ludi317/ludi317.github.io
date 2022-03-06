@@ -7,7 +7,7 @@ Or press the solve button to see the game won in 5 or less moves with Knuth's al
 
 See my [blog](https://medium.com/@ludirehak/latest) for a more thorough background and walkthrough of the code.
 
-![alt text](https://raw.githubusercontent.com/ludi317/ludi317.github.io/master/images/readme.png)
+<img src="images/readme.png" width="250">
 
 ## Rules
 
