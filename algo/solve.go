@@ -102,11 +102,8 @@ func isValid(c int, fs []feedback) bool {
 // score is played. To break ties, codes that are themselves possible solutions are preferred, followed by numerical
 // ordering. More concisely, the code chosen has the min of the max of the possible remaining solutions.
 func knuthGuess(feedbacks []feedback, invalids *[]bool) int {
-	scores := make([]int, len(allCodes))
-	for i, hypoGuess := range allCodes {
-		// Calculate max number of remaining possibilities over all feedback.
-		scores[i] = maxSolutionSpaceSize(hypoGuess, &feedbacks, invalids)
-	}
+	// Calculate max number of remaining possibilities over all feedback.
+	scores := maxSolutionSpaceSize(&feedbacks, invalids)
 
 	// Initialize minScore to its highest possible value.
 	minScore := len(allCodes)
@@ -132,35 +129,34 @@ func knuthGuess(feedbacks []feedback, invalids *[]bool) int {
 	return allCodes[candMinScoresPos[0]]
 }
 
-func maxSolutionSpaceSize(hypoGuess int, fs *[]feedback, invalids *[]bool) int {
-	solutionSpace := make([]int, len(allFeedback))
-	for idx, c := range allCodes {
-		if (*invalids)[idx] {
-			continue
+func maxSolutionSpaceSize(fs *[]feedback, invalids *[]bool) []int {
+	scores := make([]int, len(allCodes))
+	for i, hypoGuess := range allCodes {
+		possibleScores := make([]int, (numCols+1)*(numCols+1))
+		for idx, hypoSoln := range allCodes {
+			if (*invalids)[idx] {
+				continue
+			}
+			if !isValid(hypoSoln, *fs) {
+				(*invalids)[idx] = true
+				continue
+			}
+			possibleScores[score(hypoGuess, hypoSoln)]++
 		}
-		if !isValid(c, *fs) {
-			(*invalids)[idx] = true
-			continue
-		}
-		for i, hypoFeedback := range allFeedback {
-			// can c be a solution?
-			if score(hypoGuess, c) == hypoFeedback {
-				solutionSpace[i]++
+		for i := range *fs {
+			if !(*fs)[i].skip {
+				(*fs)[i].skip = true
 			}
 		}
-	}
-	for i := range *fs {
-		if !(*fs)[i].skip {
-			(*fs)[i].skip = true
+		maxSS := 0
+		for _, s := range possibleScores {
+			if s > maxSS {
+				maxSS = s
+			}
 		}
+		scores[i] = maxSS
 	}
-	maxSS := 0
-	for _, s := range solutionSpace {
-		if s > maxSS {
-			maxSS = s
-		}
-	}
-	return maxSS
+	return scores
 }
 
 // genKnuthBranchRec is a recursive implementation that creates a single branch of the knuth trie.
